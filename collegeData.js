@@ -9,61 +9,110 @@ class Data {
 
 let dataCollection = null;
 
-const initialize = () => {
+module.exports.initialize = function () {
   return new Promise((resolve, reject) => {
-    fs.readFile("C:\BTT sem2\WEB\A2\data\students.json", "utf8", (err, studentsDataFromFile) => {
+    fs.readFile("./data/courses.json", "utf8", (err, courseData) => {
       if (err) {
-        reject("Unable to read students.json");
+        reject("unable to load courses");
         return;
       }
-      fs.readFile("C:\BTT sem2\WEB\A2\data\courses.json", "utf8", (err, coursesDataFromFile) => {
+
+      fs.readFile("./data/students.json", "utf8", (err, studentData) => {
         if (err) {
-          reject("Unable to read courses.json");
+          reject("unable to load students");
           return;
         }
-        let students = JSON.parse(studentsDataFromFile);
-        let courses = JSON.parse(coursesDataFromFile);
-        dataCollection = new Data(students, courses);
+
+        dataCollection = new Data(
+          JSON.parse(studentData),
+          JSON.parse(courseData)
+        );
         resolve();
       });
     });
   });
 };
 
-const getAllStudents = () => {
+module.exports.getAllStudents = function () {
   return new Promise((resolve, reject) => {
     if (dataCollection.students.length === 0) {
-      reject("No results returned");
+      reject("query returned 0 results");
       return;
     }
+
     resolve(dataCollection.students);
   });
 };
 
-const getTAs = () => {
-  return new Promise((resolve, reject) => {
-    let TAs = dataCollection.students.filter(student => student.TA === true);
-    if (TAs.length === 0) {
-      reject("No results returned");
+module.exports.getTAs = function () {
+  return new Promise(function (resolve, reject) {
+    var filteredStudents = [];
+
+    for (let i = 0; i < dataCollection.students.length; i++) {
+      if (dataCollection.students[i].TA === true) {
+        filteredStudents.push(dataCollection.students[i]);
+      }
+    }
+
+    if (filteredStudents.length === 0) {
+      reject("query returned 0 results");
       return;
     }
-    resolve(TAs);
+
+    resolve(filteredStudents);
   });
 };
 
-const getCourses = () => {
+module.exports.getCourses = function () {
   return new Promise((resolve, reject) => {
     if (dataCollection.courses.length === 0) {
-      reject("No results returned");
+      reject("query returned 0 results");
       return;
     }
+
     resolve(dataCollection.courses);
   });
 };
 
-module.exports = {
-  initialize,
-  getAllStudents,
-  getTAs,
-  getCourses
+module.exports.getStudentByNum = function (num) {
+  return new Promise(function (resolve, reject) {
+    const foundStudent = dataCollection.students.find(
+      (student) => student.studentNum === num
+    );
+
+    if (!foundStudent) {
+      reject("no results returned");
+      return;
+    }
+
+    resolve(foundStudent);
+  });
+};
+
+module.exports.getStudentsByCourse = function (course) {
+  return new Promise(function (resolve, reject) {
+    const filteredStudents = dataCollection.students.filter(
+      (student) => student.course === course
+    );
+
+    if (filteredStudents.length === 0) {
+      reject("no results returned");
+      return;
+    }
+
+    resolve(filteredStudents);
+  });
+};
+
+module.exports.addStudent = function (studentData) {
+  return new Promise(function (resolve, reject) {
+    if (studentData.TA === undefined) {
+      studentData.TA = false;
+    } else {
+      studentData.TA = true;
+    }
+    studentData.studentNum = dataCollection.students.length + 1;
+    dataCollection.students.push(studentData);
+    resolve();
+  });
 };
